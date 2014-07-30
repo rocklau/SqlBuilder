@@ -77,7 +77,7 @@ namespace EasySql
         public void Update(string tableName, string[][] setfieldarg)
         {
             ReSet("");
-           
+
             var updateSetSql = "";
             foreach (var setfield in setfieldarg)
             {
@@ -89,8 +89,8 @@ namespace EasySql
 
             ReSql(string.Format("update {0} set {1}", tableName, updateSetSql).TrimEnd(','));
 
-            SqlContainer.SqlEnd=" ;select @@ROWCOUNT;";
-           
+            SqlContainer.SqlEnd = " ;select @@ROWCOUNT;";
+
         }
 
 
@@ -101,7 +101,7 @@ namespace EasySql
             SqlContainer.SqlStatement.Clear();
             SqlContainer.SqlStatement.Append(sql);
         }
-      
+
         private void SymbolConditions(string symbol, string condi, string name, DbType dbtype, object val)
         {
             SymbolConditions(symbol, condi, "@", name, dbtype, val);
@@ -122,6 +122,18 @@ namespace EasySql
         }
         #endregion
 
+        public void Clear()
+        {
+
+            SqlContainer.SqlParameter.Clear();
+            SqlContainer.SqlStatement.Clear();
+            SqlContainer.Condition.Clear();
+            SqlContainer.OrderStatement.Clear();
+            SqlContainer.SqlStatement.Clear();
+            SqlContainer.SqlEnd = "";
+        }
+        public void ReSet( )
+        { Clear(); }
         public void ReSet(string sql)
         {
             SqlContainer.SqlParameter.Clear();
@@ -131,7 +143,7 @@ namespace EasySql
             SqlContainer.SqlStatement.Append(sql);
             SqlContainer.SqlEnd = "";
         }
-        public void ReSet(string sql,string sqlend)
+        public void ReSet(string sql, string sqlend)
         {
             SqlContainer.SqlParameter.Clear();
             SqlContainer.SqlStatement.Clear();
@@ -145,6 +157,7 @@ namespace EasySql
         {
             ReSql(SqlContainer.SqlStatement.ToString().Replace("{" + id + "}", val));
         }
+
         public string GetSql()
         {
             var condition = SqlContainer.Condition.ToString();
@@ -174,7 +187,7 @@ namespace EasySql
             {
                 order = "";
             }
-            return sql + order +SqlContainer.SqlEnd;
+            return sql + order + SqlContainer.SqlEnd;
         }
         #region SqlMachine
         public void AndQuickSearchSql(string name, string letter = "All")
@@ -443,61 +456,74 @@ namespace EasySql
         {
             SqlContainer.SqlParameter.Add(Db.BuildInParam(name, DbType.Int64, val));
         }
+       
+        [ExecuteAfter]
         public DataTable Execute(out int count)
         {
+
+            
+
             var tb = Db.ExecuteDataTableText(GetSql(), SqlContainer.SqlParameter.ToArray());
             count = tb.Rows.Count;
             return tb;
         }
         public DataTable Execute()
         {
-
+          
             return Db.ExecuteDataTableText(GetSql(), SqlContainer.SqlParameter.ToArray());
 
         }
         public IList<T> Execute<T>()
         {
+          
             return Db.Query<T>(GetSql(), CommandType.Text, SqlContainer.SqlParameter.ToArray(), new ModelMapper<T>());
         }
         public IList<T> Execute<T, TMapper>()
         {
-
+          
             return Db.Query<T>(GetSql(), CommandType.Text, SqlContainer.SqlParameter.ToArray(), Activator.CreateInstance(typeof(TMapper)) as ModelMapper<T>);
         }
         public void ExecuteReader(Action<IDataReader> action)
         {
+          
             Db.ExecuteReaderText(GetSql(), action, SqlContainer.SqlParameter.ToArray());
 
         }
 
         public string ExecuteScalarText()
         {
+          
             var text = Db.ExecuteScalarText(GetSql(), SqlContainer.SqlParameter.ToArray());
             return text == null ? "" : text.ToString();
 
         }
+        public void ExecuteNonQueryText()
+        {
+          
+            Db.ExecuteNonQueryText(GetSql(), SqlContainer.SqlParameter.ToArray());
 
-        public string ExecuteScalarText(string sql)
+        }
+        private string ExecuteScalarText(string sql)
         {
             List<DbParameter> para = new List<DbParameter>();
             var text = Db.ExecuteScalarText(sql, para.ToArray());
             return text == null ? "" : text.ToString();
         }
-        public string ExecuteScalarTextById(string sql, string name, string val)
+        private string ExecuteScalarTextById(string sql, string name, string val)
         {
             List<DbParameter> para = new List<DbParameter>();
             para.Add(Db.BuildInParam(name, DbType.Int32, val));
             return Db.ExecuteScalarText(sql, para.ToArray()).ToString();
 
         }
-        public string ExecuteScalarTextByString(string sql, string name, string val)
+        private string ExecuteScalarTextByString(string sql, string name, string val)
         {
             List<DbParameter> para = new List<DbParameter>();
             para.Add(Db.BuildInParam(name, DbType.String, val));
             return Db.ExecuteScalarText(sql, para.ToArray()).ToString();
 
         }
-        public DataTable PageData(out int count, int pageIndex, int pageSize, string key, string fields, string tables, string sort, string order)
+        public DataTable ExecutePageData(out int count, int pageIndex, int pageSize, string key, string fields, string tables, string sort, string order)
         {
             var where = PageCreateSql(pageIndex, pageSize, key, fields, tables, sort, order);
 
@@ -506,16 +532,17 @@ namespace EasySql
             var dt = Execute(out rowcount);
 
             count = TotalTableRows(key, fields, tables, where, rowcount);
+            Clear();
             return dt;
         }
-        public IList<T> PageData<T, TMapper>(out int count, int pageIndex, int pageSize, string key, string fields, string tables, string sort, string order)
+        public IList<T> ExecutePageData<T, TMapper>(out int count, int pageIndex, int pageSize, string key, string fields, string tables, string sort, string order)
         {
             var where = PageCreateSql(pageIndex, pageSize, key, fields, tables, sort, order);
 
             var dt = Execute<T, TMapper>();
 
             count = TotalTableRows(key, fields, tables, where, dt.Count);
-
+            Clear();
             return dt;
 
         }
@@ -569,14 +596,7 @@ namespace EasySql
         }
 
 
-
-
-        public void ExecuteNonQueryText()
-        {
-            Db.ExecuteNonQueryText(GetSql(), SqlContainer.SqlParameter.ToArray());
-
-        }
-        public void ExecuteNonQueryText(string sql, string name, string val)
+        private void ExecuteNonQueryText(string sql, string name, string val)
         {
             List<DbParameter> para = new List<DbParameter>();
             para.Add(Db.BuildInParam(name, DbType.String, val));
@@ -609,10 +629,10 @@ namespace EasySql
             this.Db = null;
 
         }
+        [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+        private class ExecuteAfterAttribute : Attribute
+        {
 
-
-
-
-
+        }
     }
 }

@@ -11,21 +11,19 @@ namespace SqlBuilderTest
 
     [TestClass]
     public class SqlBuilderUnitTest
-    {
-        Database testdb;
+    { 
         SqlBuilder sqlbuilder;
         [TestInitialize]
         public void TestInitial()
         {
 
             sqlbuilder = new SqlBuilder(AppSettings.GetConnectionString("SampleDatabaseEntities"));
+
         }
         [TestCleanup]
         public void TestCleanup()
         {
-            sqlbuilder.Dispose();
-            testdb = null;
-
+            sqlbuilder.Dispose(); 
         }
         [TestMethod]
         public void TestAppendStrSQL()
@@ -46,10 +44,11 @@ namespace SqlBuilderTest
         [TestMethod]
         public void SamplePageDataTest()
         {
+            sqlbuilder.ReSet();
 
-            sqlbuilder.ReSet("");
             var count = 0;
-            var result = sqlbuilder.PageData<SampleItemViewModel, SampleItemRowMapper>
+            sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
+            var result = sqlbuilder.ExecutePageData<SampleItemViewModel, SampleItemRowMapper>
                 (out count, 0, 10, SampleItem_Table.Id, "*", SampleItem_Table.TableName, SampleItem_Table.Id, SqlOrderType.Asc
                );
             int expected = 1;
@@ -62,19 +61,20 @@ namespace SqlBuilderTest
         [TestMethod]
         public void SampleItemUpdateTest()
         {
-            var expected = "1";
-            var setfield = new[] { SampleItem_Table.Name, "test2" };
-            var setfieldarg = new[] { setfield };
-            sqlbuilder.Update(SampleItem_Table.TableName, setfieldarg);
+           
+                var expected = "1";
+                var setfield = new[] { SampleItem_Table.Name, "test2" };
+                var setfieldarg = new[] { setfield };
+                sqlbuilder.Update(SampleItem_Table.TableName, setfieldarg);
 
-            sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
+                sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
 
-            var sql = sqlbuilder.GetSql();
-            var actual = sqlbuilder.ExecuteScalarText();
+                sqlbuilder.GetSql();
+                var actual = sqlbuilder.ExecuteScalarText();
 
-            Assert.AreEqual(expected, actual);
-
-
+                Assert.AreEqual(expected, actual);
+             
         }
+      
     }
 }
