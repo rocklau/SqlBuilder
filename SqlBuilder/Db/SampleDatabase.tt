@@ -111,7 +111,7 @@ foreach (var entity in typeMapper.GetItemsToGenerate<EntityType>(itemCollection)
 }
 	public  class <#=entity.Name#>_Table
     {
-	 public static string TableName (){return "<#=entity.Name#>";}
+	 public static string TableName = "<#=entity.Name#>";
 	 <#=tablestring #>
 	}
  

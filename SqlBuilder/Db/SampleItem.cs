@@ -29,7 +29,7 @@ namespace EasySql.Db
     }
     	public  class SampleItem_Table
         {
-    	 public static string TableName (){return "SampleItem";}
+    	 public static string TableName = "SampleItem";
     	 
      	public static string Id= "Id";
      	public static string Name= "Name";

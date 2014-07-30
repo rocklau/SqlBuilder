@@ -44,18 +44,33 @@ namespace SqlBuilderTest
         [TestMethod]
         public void SelectPageTest()
         {
+            int expected = 1;
 
             sqlbuilder.ReSet();
 
             var count = 0;
+            //1.add where
             sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
+            //2.execute separate page method
             var result = sqlbuilder.ExecutePageData<SampleItemViewModel, SampleItemRowMapper>
-                (out count, 0, 10,
-                SampleItem_Table.Id, "*",
-                SampleItem_Table.TableName(), SampleItem_Table.Id,
+                (
+                //total records
+                out count,
+                //page index
+                0,
+                //page size
+                10,
+                //primary key
+                SampleItem_Table.Id,
+                //display colums
+                "*",
+                //set table
+                SampleItem_Table.TableName,
+                //order by
+                SampleItem_Table.Id,
                 SqlOrderType.Asc
-               );
-            int expected = 1;
+               ); 
+
             var actual = result.FirstOrDefault().ID;
 
             Assert.AreEqual(expected, actual);
@@ -68,8 +83,11 @@ namespace SqlBuilderTest
             sqlbuilder.ReSet();
             //select * from sampleitem where id=1 mapping to SampleItemViewModel by customize map
             var expected = 1;
-            sqlbuilder.Select(SampleItem_Table.TableName());
+            //1.set table
+            sqlbuilder.Select(SampleItem_Table.TableName);
+            //2.add where
             sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
+            //3.execute
             var actual = sqlbuilder.Execute<SampleItemViewModel, SampleItemRowMapper>()
                         .FirstOrDefault().ID;
             Assert.AreEqual(expected, actual);
@@ -80,7 +98,7 @@ namespace SqlBuilderTest
             sqlbuilder.ReSet();
             //select id from sampleitem where id=1 
             var expected = "1";
-            sqlbuilder.Select(SampleItem_Table.TableName(), new[] { SampleItem_Table.Id });
+            sqlbuilder.Select(SampleItem_Table.TableName, new[] { SampleItem_Table.Id });
             sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
             var actual = sqlbuilder.ExecuteScalarText();
             Assert.AreEqual(expected, actual);
@@ -89,16 +107,15 @@ namespace SqlBuilderTest
         public void SelectTwoFieldsTest()
         {
             sqlbuilder.ReSet();
-            //select id from sampleitem where id=1  using AutoReflection
+            //select id,name from sampleitem where id=1  using AutoReflection
             var expected = 1;
-            sqlbuilder.Select(SampleItem_Table.TableName(), new[] { SampleItem_Table.Id, SampleItem_Table.Name });
+            sqlbuilder.Select(SampleItem_Table.TableName, new[] { SampleItem_Table.Id, SampleItem_Table.Name });
             sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
             //  var actual = sqlbuilder.Execute<SampleItem>().FirstOrDefault().Id;
             var actual = sqlbuilder.Execute<SampleItemViewModel>().FirstOrDefault().ID;
 
             Assert.AreEqual(expected, actual);
         }
-
         [TestMethod]
         public void UpdateTest()
         {
@@ -108,7 +125,7 @@ namespace SqlBuilderTest
             //1.add set fields
             sqlbuilder.AddPara(SampleItem_Table.Name, "test2");
 
-            sqlbuilder.Update(SampleItem_Table.TableName());
+            sqlbuilder.Update(SampleItem_Table.TableName);
             //2.add where 
             sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
             //3.execute
@@ -117,15 +134,14 @@ namespace SqlBuilderTest
             Assert.AreEqual(expected, actual);
 
         }
-
         [TestMethod]
         public void InsertTest()
         {
 
             sqlbuilder.ReSet();
-            //update sampleitem set name='test' where id = 1
+           
             var expected = "1";
-
+            //1.set insert fields
             sqlbuilder.AddPara(SampleItem_Table.Id, 2);
             sqlbuilder.AddPara(SampleItem_Table.Name, "test");
             sqlbuilder.AddPara(SampleItem_Table.A, "aaa");
@@ -133,8 +149,8 @@ namespace SqlBuilderTest
             sqlbuilder.AddPara(SampleItem_Table.C, "ccc");
             sqlbuilder.AddPara(SampleItem_Table.Date, DateTime.Now);
 
-
-            var actual = sqlbuilder.ExecuteInsert(SampleItem_Table.TableName());
+            //2.execute
+            var actual = sqlbuilder.ExecuteInsert(SampleItem_Table.TableName);
             if (expected == actual)
             {
                 DeleteTest();
@@ -147,8 +163,10 @@ namespace SqlBuilderTest
         {
             sqlbuilder.ReSet();
             var expected = "1";
+            //1.add where
             sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 2);
-            var actual = sqlbuilder.ExecuteDelete(SampleItem_Table.TableName());
+            //2.execute
+            var actual = sqlbuilder.ExecuteDelete(SampleItem_Table.TableName);
 
             Assert.AreEqual(expected, actual);
         }
