@@ -6,6 +6,11 @@ using System.Data.Common;
 
 namespace EasySql
 {
+    public interface ITable
+    {
+        string TableName();
+    }
+
     public static class SqlOrderType
     {
         public static string Asc { get { return "ASC"; } }

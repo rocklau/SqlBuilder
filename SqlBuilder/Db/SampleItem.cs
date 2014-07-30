@@ -27,9 +27,9 @@ namespace EasySql.Db
         public Nullable<System.DateTime> Date { get; set; }
     	
     }
-    	public static  class SampleItem_Table
+    	public  class SampleItem_Table
         {
-    	 public static string TableName="SampleItem";
+    	 public static string TableName (){return "SampleItem";}
     	 
      	public static string Id= "Id";
      	public static string Name= "Name";
@@ -37,9 +37,7 @@ namespace EasySql.Db
      	public static string B= "B";
      	public static string C= "C";
      	public static string Date= "Date";
-      
-
-        }
+    	}
      
     
 }

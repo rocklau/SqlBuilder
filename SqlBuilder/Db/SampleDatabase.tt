@@ -10,7 +10,7 @@ var typeMapper = new TypeMapper(code, ef, textTransform.Errors);
 var	fileManager = EntityFrameworkTemplateFileManager.Create(this);
 var itemCollection = new EdmMetadataLoader(textTransform.Host, textTransform.Errors).CreateEdmItemCollection(inputFile);
 var codeStringGenerator = new CodeStringGenerator(code, typeMapper, ef);
-var   tablename="";
+ 
 var   tablestring="";
 if (!typeMapper.VerifyCaseInsensitiveTypeUniqueness(typeMapper.GetAllGlobalItems(itemCollection), inputFile))
 {
@@ -109,9 +109,9 @@ foreach (var entity in typeMapper.GetItemsToGenerate<EntityType>(itemCollection)
     }
 #>
 }
-	public static  class <#=entity.Name#>_Table
+	public  class <#=entity.Name#>_Table
     {
-	 public static string TableName="<#=entity.Name#>";
+	 public static string TableName (){return "<#=entity.Name#>";}
 	 <#=tablestring #>
 	}
  

@@ -74,25 +74,59 @@ namespace EasySql
             CreateDatabase(connectionString);
         }
 
-        public void Update(string tableName, string[][] setfieldarg)
+        public void Update(string tableName )
         {
-            ReSet("");
+            
 
             var updateSetSql = "";
-            foreach (var setfield in setfieldarg)
+            foreach (var setfield in SqlContainer.SqlParameter)
             {
-                updateSetSql += string.Format(" {0} = {1} ,"
-                    , setfield[0]
-                    , "@" + setfield[0]);
-                AddPara(setfield[0], setfield[1]);
+                updateSetSql += string.Format(" {0} = {1} , "
+                    , setfield.ParameterName.Replace("@","")
+                    ,    setfield.ParameterName);               
             };
 
-            ReSql(string.Format("update {0} set {1}", tableName, updateSetSql).TrimEnd(','));
+            ReSql(string.Format("update {0} set {1}", tableName, updateSetSql.Trim().TrimEnd(',')));
 
             SqlContainer.SqlEnd = " ;select @@ROWCOUNT;";
+            
+        }
+        public string ExecuteDelete(string tableName)
+        {
+            ReSql("delete from " + tableName);
+            SqlContainer.SqlEnd = " ;select @@ROWCOUNT;";
+           return  ExecuteScalarText();
+        }
+        public string ExecuteInsert(string tableName)
+        {
+         
+            var insertFieldSql = "";
+            var insertValueSql = "";
+            foreach (var setfield in SqlContainer.SqlParameter)
+            {
+                insertFieldSql += string.Format("{0},"
+                    , setfield.ParameterName.Replace("@", ""));
+                insertValueSql += string.Format("{0},"
+                   , setfield.ParameterName); 
+            };
 
+            ReSql(string.Format("insert into {0} ({1}) values ({2})", tableName, insertFieldSql.TrimEnd(','), insertValueSql.TrimEnd(',')));
+
+            SqlContainer.SqlEnd = " ;select @@ROWCOUNT;";
+         return     ExecuteScalarText();
         }
 
+        public void Select(string tableName, string[] selectFieldArg)
+        {
+            ReSet(string.Format("select {1} from {0} ", tableName, selectFieldArg.Join(",")).TrimEnd(',')
+                );
+
+        }
+        public void Select(string tableName)
+        {
+            ReSet(string.Format("select * from {0} ", tableName));
+
+        }
 
         #endregion
         #region privateMethod
@@ -101,12 +135,16 @@ namespace EasySql
             SqlContainer.SqlStatement.Clear();
             SqlContainer.SqlStatement.Append(sql);
         }
+ 
 
         private void SymbolConditions(string symbol, string condi, string name, DbType dbtype, object val)
         {
             SymbolConditions(symbol, condi, "@", name, dbtype, val);
 
         }
+
+       
+
         private void SymbolConditions(string symbol, string condi, string condiresult, string name, DbType dbtype, object val)
         {
 
@@ -132,7 +170,7 @@ namespace EasySql
             SqlContainer.SqlStatement.Clear();
             SqlContainer.SqlEnd = "";
         }
-        public void ReSet( )
+        public void ReSet()
         { Clear(); }
         public void ReSet(string sql)
         {
@@ -456,12 +494,15 @@ namespace EasySql
         {
             SqlContainer.SqlParameter.Add(Db.BuildInParam(name, DbType.Int64, val));
         }
-       
+        public void AddPara(string name, DateTime val)
+        {
+            SqlContainer.SqlParameter.Add(Db.BuildInParam(name, DbType.DateTime, val));
+        }
         [ExecuteAfter]
         public DataTable Execute(out int count)
         {
 
-            
+
 
             var tb = Db.ExecuteDataTableText(GetSql(), SqlContainer.SqlParameter.ToArray());
             count = tb.Rows.Count;
@@ -469,37 +510,37 @@ namespace EasySql
         }
         public DataTable Execute()
         {
-          
+
             return Db.ExecuteDataTableText(GetSql(), SqlContainer.SqlParameter.ToArray());
 
         }
         public IList<T> Execute<T>()
         {
-          
+
             return Db.Query<T>(GetSql(), CommandType.Text, SqlContainer.SqlParameter.ToArray(), new ModelMapper<T>());
         }
         public IList<T> Execute<T, TMapper>()
         {
-          
+
             return Db.Query<T>(GetSql(), CommandType.Text, SqlContainer.SqlParameter.ToArray(), Activator.CreateInstance(typeof(TMapper)) as ModelMapper<T>);
         }
         public void ExecuteReader(Action<IDataReader> action)
         {
-          
+
             Db.ExecuteReaderText(GetSql(), action, SqlContainer.SqlParameter.ToArray());
 
         }
 
         public string ExecuteScalarText()
         {
-          
+
             var text = Db.ExecuteScalarText(GetSql(), SqlContainer.SqlParameter.ToArray());
             return text == null ? "" : text.ToString();
 
         }
         public void ExecuteNonQueryText()
         {
-          
+
             Db.ExecuteNonQueryText(GetSql(), SqlContainer.SqlParameter.ToArray());
 
         }
