@@ -10,7 +10,7 @@ using System.Threading;
 using ComLib.Data;
 using AutoMapper;
 using EasySql.Db;
-
+using Dapper;
 namespace EasySql
 {
 
@@ -53,10 +53,12 @@ namespace EasySql
         private void CreateDatabase(IDatabase db)
         {
             Db = db as Database;
+            
         }
         private void CreateDatabase(string connectionString)
         {
             Db = new Database(connectionString);
+         
         }
         public SqlBuilder()
         {

@@ -79,7 +79,8 @@ namespace SqlBuilderTest
         }
         [TestMethod]
         public void SelectAllTest()
-        {
+        { 
+
             sqlbuilder.ReSet();
             //select * from sampleitem where id=1 mapping to SampleItemViewModel by customize map
             var expected = 1;
