@@ -1,6 +1,6 @@
-SqlBuilder
+Sql Builder
 ==========
 
-SqlBuilder for c sharp
+Sql Builder for c sharp
 
 ##Easy to manage sql business logic 
