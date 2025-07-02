@@ -134,3 +134,151 @@ public partial class SampleDatabaseEntities : DbContext
     public virtual DbSet<SampleItem> SampleItems { get; set; }
 }
 ```
+
+## 📚 Usage Examples
+
+### Comprehensive Test Reference
+
+The `SqlBuilderTest/SqlBuilderUnitTest.cs` file provides extensive examples of SqlBuilder usage patterns. Here are the key test methods and their implementations:
+
+#### Test Initialization Pattern
+```csharp
+[TestInitialize]
+public void TestInitial()
+{
+    sqlbuilder = new SqlBuilder(AppSettings.GetConnectionString("SampleDatabaseEntities"));
+    sqlbuilder.ReSet(); // Always reset state before operations
+}
+
+[TestCleanup]
+public void TestCleanup()
+{
+    sqlbuilder.Dispose(); // Proper resource disposal
+}
+```
+
+#### ReSet() Method Usage
+Essential for clearing previous state before each operation:
+```csharp
+sqlbuilder.ReSet(); // Clear previous SQL state
+// Proceed with new SQL operation
+```
+
+#### Select() Method Examples
+```csharp
+// Select all fields with custom mapping
+[TestMethod]
+public void SelectAllTest()
+{
+    sqlbuilder.ReSet();
+    sqlbuilder.Select(SampleItem_Table.TableName);
+    sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
+    var result = sqlbuilder.Execute<SampleItemViewModel, SampleItemRowMapper>().FirstOrDefault();
+}
+
+// Select specific fields with auto-reflection
+[TestMethod]
+public void SelectTwoFieldsTest()
+{
+    sqlbuilder.ReSet();
+    sqlbuilder.Select(SampleItem_Table.TableName, new[] { SampleItem_Table.Id, SampleItem_Table.Name });
+    sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
+    var result = sqlbuilder.Execute<SampleItemViewModel>().FirstOrDefault();
+}
+```
+
+#### AndEqualIntSql() Method Usage
+Add integer equality conditions to WHERE clause:
+```csharp
+sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1); // WHERE Id = 1
+```
+
+#### Execute<T>() Method Examples
+Execute queries with strongly-typed results:
+```csharp
+// With custom mapper
+var result = sqlbuilder.Execute<SampleItemViewModel, SampleItemRowMapper>();
+
+// With auto-reflection
+var result = sqlbuilder.Execute<SampleItemViewModel>();
+```
+
+#### ExecutePageData() Method Usage
+Implement efficient pagination:
+```csharp
+[TestMethod]
+public void SelectPageTest()
+{
+    sqlbuilder.ReSet();
+    var count = 0;
+    sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
+    
+    var result = sqlbuilder.ExecutePageData<SampleItemViewModel, SampleItemRowMapper>(
+        out count,                    // Total record count
+        0,                           // Page index (0-based)
+        10,                          // Page size
+        SampleItem_Table.Id,         // Primary key for sorting
+        "*",                         // Columns to select
+        SampleItem_Table.TableName,  // Table name
+        SampleItem_Table.Id,         // Order by field
+        SqlOrderType.Asc            // Sort direction
+    );
+}
+```
+
+#### ExecuteScalarText() Method Usage
+Execute scalar queries returning single values:
+```csharp
+[TestMethod]
+public void SelectCountTest()
+{
+    sqlbuilder.ReSet();
+    sqlbuilder.Select(SampleItem_Table.TableName, new[] { "count(*)" });
+    sqlbuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
+    var count = sqlbuilder.ExecuteScalarText(); // Returns count as string
+}
+```
+
+### Basic Query Building
+
+```csharp
+using (var sqlBuilder = new SqlBuilder())
+{
+    sqlBuilder.ReSet();
+    
+    // Simple SELECT query
+    sqlBuilder.Select("Users");
+    sqlBuilder.AndEqualIntSql("Id", 1);
+    
+    var users = sqlBuilder.Execute<User>();
+}
+```
+
+### Advanced Query Operations
+
+```csharp
+// Complex query with multiple conditions
+sqlBuilder.ReSet();
+sqlBuilder.Select("Products", new[] { "Id", "Name", "Price" });
+sqlBuilder.AndEqualIntSql("CategoryId", 1);
+sqlBuilder.AddPara("MinPrice", 100);
+sqlBuilder.AppendCondition(" AND Price >= @MinPrice");
+
+var products = sqlBuilder.Execute<Product>();
+```
+
+### Pagination Example
+
+```csharp
+int totalCount;
+var pagedData = sqlBuilder.ExecutePageData<Product, ProductMapper>(
+    out totalCount,
+    pageIndex: 0,
+    pageSize: 20,
+    primaryKey: "Id",
+    fields: "*",
+    tableName: "Products",
+    orderField: "Name",
+    orderType: SqlOrderType.Asc
+);
+```
