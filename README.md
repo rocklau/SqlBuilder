@@ -394,3 +394,170 @@ Order By Id ASC
 - Transaction support through ComLib.Data.Database
 - Bulk operations and batch processing capabilities
 - Custom data type handling and conversion
+
+## 🏢 Core Architecture
+
+### Main Components
+
+#### 1. SqlBuilder Class
+- **Namespace**: `EasySql`
+- **Inheritance**: Implements `IDisposable` interface
+- **Design Pattern**: Singleton pattern (thread-safe)
+- **Main Responsibilities**: SQL statement building, query execution, connection management
+
+#### 2. SqlContainer Class
+- **Purpose**: Maintains SQL building state
+- **Core Properties**:
+  - `SqlParameter`: Parameter list (`List<DbParameter>`)
+  - `SqlStatement`: SQL statement (`StringBuilder`)
+  - `Condition`: Condition statement (`StringBuilder`)
+  - `OrderStatement`: Order statement (`StringBuilder`)
+  - `SqlEnd`: SQL end statement (`string`)
+
+### Dependencies
+
+Based on `packages.config` analysis, the project depends on the following core components:
+
+- **AutoMapper 3.2.1**: Object mapping
+- **Dapper 1.42**: Lightweight ORM operations
+- **EntityFramework 6.1.1**: EDMX integration support
+- **ComLib**: Custom library providing Database class and other utilities
+- **Target Framework**: .NET Framework 4.5
+
+## ✨ Core Features
+
+### 1. Fluent API Design
+Supports method chaining for intuitive SQL building experience:
+
+```csharp
+sqlBuilder.Select(SampleItem_Table.TableName)
+          .AndEqualIntSql(SampleItem_Table.Id, 1)
+          .Execute<SampleItemViewModel>();
+```
+
+### 2. Thread Safety
+- Uses `LazyThreadSafetyMode.PublicationOnly` to ensure thread-safe singleton
+- Supports concurrent operations in multi-threaded environments
+
+### 3. Parameterized Queries
+Automatically handles SQL parameters to prevent SQL injection attacks:
+
+```csharp
+sqlBuilder.AddPara(SampleItem_Table.Name, "test");
+sqlBuilder.AndEqualIntSql(SampleItem_Table.Id, 1);
+```
+
+### 4. Multiple Mapping Options
+- **Auto-reflection mapping**: Direct mapping to entity classes
+- **Custom mapping**: Implemented by inheriting `ModelMapper<T>`
+- **AutoMapper integration**: Supports complex object mapping
+
+### 5. Pagination Support
+Implements efficient pagination using `ROW_NUMBER() OVER` clause for SQL Server 2005+
+
+## 🔧 Configuration
+
+### Connection String Setup
+
+```csharp
+// Using AppSettings class
+public class AppSettings
+{
+    public static string DbConnectionString 
+    {
+        get { return ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString; }
+    }
+    
+    public static string GetConnectionString(string name)
+    {
+        return ConfigurationManager.ConnectionStrings[name].ConnectionString;
+    }
+}
+```
+
+### App.config Configuration
+
+```xml
+<configuration>
+  <connectionStrings>
+    <add name="DefaultConnection" 
+         connectionString="Data Source=.;Initial Catalog=YourDatabase;Integrated Security=True" 
+         providerName="System.Data.SqlClient" />
+  </connectionStrings>
+</configuration>
+```
+
+## 🗺️ Custom Mapping
+
+### Creating Custom Mappers
+
+```csharp
+public class SampleItemRowMapper : ModelMapper<SampleItemViewModel>
+{
+    public override SampleItemViewModel BuildModel(IDataReader reader, int rowNumber)
+    {
+        SampleItemViewModel entity = new SampleItemViewModel();
+        entity.ID = reader[SampleItem_Table.Id] == DBNull.Value ? 0 : (int)reader[SampleItem_Table.Id];
+        entity.Name = reader[SampleItem_Table.Name] == DBNull.Value ? string.Empty : reader[SampleItem_Table.Name].ToString();
+        entity.Abc = reader[SampleItem_Table.A].ToString() + "  " + reader[SampleItem_Table.B].ToString() + " (" + reader[SampleItem_Table.C].ToString() + ")";
+        entity.Date = reader[SampleItem_Table.Date] == DBNull.Value ? DateTime.MinValue : (DateTime)reader[SampleItem_Table.Date];
+        return entity;
+    }
+}
+```
+
+### Table Structure Definition
+```csharp
+public class SampleItem_Table
+{
+    public static string TableName = "SampleItem";
+    public static string Id = "Id";
+    public static string Name = "Name";
+    public static string A = "A";
+    public static string B = "B";
+    public static string C = "C";
+    public static string Date = "Date";
+}
+```
+
+## 🔒 Security Features
+
+1. **Parameterized Queries**: All user input is processed through parameterization to prevent SQL injection
+2. **Connection Management**: Implements `IDisposable` interface to ensure proper connection resource disposal
+3. **Thread Safety**: Singleton pattern uses thread-safe lazy initialization
+
+## 📋 Best Practices
+
+1. **Use using statements**: Ensure SqlBuilder instances are properly disposed
+```csharp
+using (var sqlBuilder = new SqlBuilder())
+{
+    // Database operations
+}
+```
+
+2. **Reset state**: Call `ReSet()` method before each operation
+```csharp
+sqlBuilder.ReSet();
+```
+
+3. **Parameterized queries**: Always use `AddPara()` method to add parameters
+```csharp
+sqlBuilder.AddPara("paramName", value);
+```
+
+4. **Exception handling**: Properly handle `SqlStatmentException` and `AppSettingReadErrorException`
+
+5. **Connection string management**: Use `AppSettings` class for centralized configuration
+
+6. **Custom mapping**: Inherit from `ModelMapper<T>` for complex mapping scenarios
+
+7. **Pagination**: Use `ExecutePageData()` for efficient large dataset handling
+
+## 🤝 Contributing
+
+Issues and Pull Requests are welcome to improve SqlBuilder.
+
+## 📄 License
+
+Please refer to the license file in the project root directory for detailed information.
