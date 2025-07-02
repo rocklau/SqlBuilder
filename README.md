@@ -282,3 +282,115 @@ var pagedData = sqlBuilder.ExecutePageData<Product, ProductMapper>(
     orderType: SqlOrderType.Asc
 );
 ```
+
+## 🔧 Core Code Reference
+
+### SqlBuilder.cs Architecture Overview
+
+The `SqlBuilder/SqlBuilder.cs` file contains the core implementation with the following key architectural components:
+
+#### Singleton Pattern Implementation
+```csharp
+// Thread-safe singleton with lazy initialization
+private static readonly Lazy<SqlBuilder> instance =
+    new Lazy<SqlBuilder>(
+        delegate { return new SqlBuilder(); },
+        LazyThreadSafetyMode.PublicationOnly  // Thread safety first
+    );
+
+public static SqlBuilder Instance
+{
+    get { return instance.Value; }
+}
+```
+
+#### Thread Safety Features
+- Uses `LazyThreadSafetyMode.PublicationOnly` for thread-safe singleton initialization
+- Supports concurrent operations in multi-threaded environments
+- Thread-safe lazy instantiation prevents race conditions
+
+#### IDisposable Implementation
+```csharp
+public class SqlBuilder : IDisposable
+{
+    public void Dispose()
+    {
+        var conn = this.Db.GetConnection();
+        if (conn != null)
+        {
+            conn.Close();
+            conn.Dispose();
+        }
+        this.Db = null;
+    }
+}
+```
+
+#### Main API Methods
+
+**Core Query Methods:**
+- `Select(string tableName)` - Initialize SELECT statement
+- `Select(string tableName, string[] fields)` - SELECT with specific fields
+- `Update(string tableName)` - Initialize UPDATE statement
+- `ExecuteInsert(string tableName)` - Execute INSERT operation
+- `ExecuteDelete(string tableName)` - Execute DELETE operation
+
+**Condition Methods:**
+- `AndEqualIntSql(string fieldName, int value)` - Add integer equality condition
+- `AddPara(string name, object value)` - Add parameterized value
+
+**Execution Methods:**
+- `Execute<T>()` - Execute with auto-reflection mapping
+- `Execute<T, TMapper>()` - Execute with custom mapper
+- `ExecutePageData<T, TMapper>()` - Execute with pagination
+- `ExecuteScalarText()` - Execute scalar query
+- `ExecuteNonQueryText()` - Execute non-query statement
+
+## 🗄️ SQL Server 2000+ Support
+
+SqlBuilder provides comprehensive support for SQL Server 2000 and all subsequent versions, ensuring compatibility across a wide range of database environments.
+
+### Version Compatibility
+
+- **SQL Server 2000**: Full compatibility with legacy systems
+- **SQL Server 2005**: Enhanced features support including ROW_NUMBER() for pagination
+- **SQL Server 2008/2008 R2**: Advanced data types and features
+- **SQL Server 2012+**: Modern SQL Server features and optimizations
+- **SQL Server Express/LocalDB**: Development and lightweight deployment support
+
+### Database Features Support
+
+#### Pagination Implementation
+Uses SQL Server's ROW_NUMBER() window function for efficient pagination:
+
+```csharp
+// Generated pagination SQL for SQL Server 2005+
+WITH OrderedRows As
+(
+    SELECT tbltbl.*, ROW_NUMBER() OVER (Order By tbltbl.Id ASC) as RowNum 
+    FROM (SELECT * FROM SampleItem WHERE 1=1) as tbltbl
+)
+SELECT * FROM OrderedRows Where RowNum > @startRowIndex 
+Order By Id ASC
+```
+
+#### Parameterized Query Support
+- Full support for SQL Server parameterized queries
+- Automatic parameter type detection and conversion
+- SQL injection prevention through proper parameterization
+
+#### Connection Management
+- Supports SQL Server connection strings
+- Compatible with Entity Framework connection strings
+- LocalDB and SQL Server Express support for development
+
+#### Sample Database Integration
+- Includes `SampleDatabase.mdf` for immediate testing
+- Pre-configured connection strings for quick setup
+- Entity Framework EDMX integration for table structure generation
+
+#### Advanced SQL Server Features
+- Support for multiple active result sets (MARS)
+- Transaction support through ComLib.Data.Database
+- Bulk operations and batch processing capabilities
+- Custom data type handling and conversion
